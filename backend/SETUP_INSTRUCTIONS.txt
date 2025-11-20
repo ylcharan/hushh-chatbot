@@ -1,0 +1,258 @@
+================================================================================
+RAG CHATBOT - SETUP INSTRUCTIONS
+================================================================================
+
+This chatbot uses OpenAI's GPT models and a vector database to provide 
+intelligent responses based on your knowledge base.
+
+================================================================================
+QUICK START (3 Steps)
+================================================================================
+
+1. Install Dependencies
+   ----------------------
+   cd backend
+   pip install -r requirements.txt
+
+2. Configure OpenAI API Key
+   -------------------------
+   python setup_openai.py
+   
+   (You'll need an API key from https://platform.openai.com/api-keys)
+
+3. Seed Knowledge Base & Start Server
+   ------------------------------------
+   python seed_knowledge.py    # Add sample knowledge
+   python app.py               # Start the server
+   
+   OR use the all-in-one starter:
+   python start.py             # Checks everything and starts server
+
+================================================================================
+DETAILED SETUP
+================================================================================
+
+Step 1: Get OpenAI API Key
+---------------------------
+1. Visit: https://platform.openai.com/api-keys
+2. Sign in or create an account
+3. Click "Create new secret key"
+4. Copy the key (starts with 'sk-')
+5. Keep it secure - you'll need it in the next step
+
+Step 2: Configure the Chatbot
+------------------------------
+Run the setup script:
+  python setup_openai.py
+
+This will:
+- Prompt you for your OpenAI API key
+- Create a .env file with your configuration
+- Validate the setup
+
+Alternative: Manual Configuration
+----------------------------------
+Create a file named '.env' in the backend directory with:
+
+  OPENAI_API_KEY=sk-your-actual-key-here
+  OPENAI_MODEL=gpt-3.5-turbo
+
+Or set environment variable:
+  export OPENAI_API_KEY='sk-your-actual-key-here'
+
+Step 3: Initialize the Knowledge Base
+--------------------------------------
+Run the seed script to add sample knowledge:
+  python seed_knowledge.py
+
+This adds 10 sample knowledge entries about:
+- Company information
+- Business hours
+- Product features
+- Pricing plans
+- API documentation
+- And more...
+
+Step 4: Start the Server
+-------------------------
+Option A - Simple start:
+  python app.py
+
+Option B - With checks (recommended):
+  python start.py
+
+The server will start at: http://localhost:5001
+
+================================================================================
+TESTING THE CHATBOT
+================================================================================
+
+Run the test suite:
+  python test_chatbot.py
+
+This will test:
+- Embedding generation
+- Database operations
+- Knowledge retrieval
+- Chat response generation
+- OpenAI API connection
+
+Test the API manually:
+  curl -X POST http://localhost:5001/api/chat \
+    -H "Content-Type: application/json" \
+    -d '{"message": "What are your business hours?"}'
+
+================================================================================
+ADDING YOUR OWN KNOWLEDGE
+================================================================================
+
+Via API (while server is running):
+-----------------------------------
+curl -X POST http://localhost:5001/api/knowledge \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Your Knowledge Title",
+    "content": "Your detailed content here...",
+    "category": "general"
+  }'
+
+Via Python Script:
+------------------
+from database import Database
+from rag_service import RAGService
+
+db = Database()
+rag = RAGService()
+
+# Add knowledge
+embedding = rag.generate_embedding("Your content")
+db.add_knowledge(
+    title="Your Title",
+    content="Your content",
+    embedding=embedding,
+    category="general"
+)
+
+================================================================================
+API ENDPOINTS
+================================================================================
+
+Health Check:
+  GET  /api/health
+
+Chat:
+  POST /api/chat
+  Body: {"message": "your question", "session_id": "optional"}
+
+Knowledge Base:
+  GET    /api/knowledge              - List all knowledge
+  GET    /api/knowledge/<id>         - Get specific entry
+  POST   /api/knowledge              - Add new entry
+  PUT    /api/knowledge/<id>         - Update entry
+  DELETE /api/knowledge/<id>         - Delete entry
+
+Sessions:
+  POST /api/sessions                 - Create new session
+  GET  /api/sessions/<session_id>    - Get session info
+  GET  /api/chat/history/<session_id> - Get chat history
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+Problem: "OpenAI API key not configured"
+Solution: Run 'python setup_openai.py' and enter your API key
+
+Problem: "Knowledge base is empty"
+Solution: Run 'python seed_knowledge.py' to add sample data
+
+Problem: "Module not found" errors
+Solution: Run 'pip install -r requirements.txt'
+
+Problem: Slow or no responses
+Solution: 
+  - Check your internet connection
+  - Verify OpenAI API key is valid
+  - Check OpenAI API status at status.openai.com
+
+Problem: "Rate limit exceeded"
+Solution: 
+  - Wait a few minutes and try again
+  - Upgrade your OpenAI plan for higher limits
+  - Check your OpenAI usage dashboard
+
+================================================================================
+FEATURES
+================================================================================
+
+✓ RAG (Retrieval Augmented Generation)
+  - Semantic search using sentence transformers
+  - Retrieves relevant knowledge before generating responses
+  
+✓ OpenAI Integration
+  - Uses GPT-3.5-turbo for intelligent responses
+  - Maintains conversation context
+  - Fallback to simple responses if OpenAI unavailable
+
+✓ Knowledge Base Management
+  - Add, update, delete knowledge entries
+  - Automatic embedding generation
+  - Category organization
+
+✓ Session Management
+  - Track conversations across sessions
+  - Chat history storage
+  - Context-aware responses
+
+✓ Vector Similarity Search
+  - Cosine similarity for finding relevant knowledge
+  - Configurable similarity threshold
+  - Top-k retrieval
+
+================================================================================
+COSTS & USAGE
+================================================================================
+
+OpenAI API Costs (as of 2024):
+- GPT-3.5-turbo: ~$0.002 per 1K tokens
+- Average chat message: ~500-1000 tokens
+- Estimated cost: $0.001-$0.002 per message
+
+Tips to reduce costs:
+- Use GPT-3.5-turbo instead of GPT-4
+- Reduce max_tokens in rag_service.py
+- Limit chat history context
+- Cache common responses
+
+Free tier includes:
+- $5 free credits for new accounts
+- ~2,500-5,000 messages with free credits
+
+================================================================================
+NEXT STEPS
+================================================================================
+
+1. Start the frontend:
+   cd ../frontend
+   npm install
+   npm run dev
+
+2. Access the web interface at:
+   http://localhost:3000
+
+3. Customize the knowledge base with your own data
+
+4. Integrate with your existing systems via API
+
+================================================================================
+SUPPORT
+================================================================================
+
+For issues or questions:
+- Check the README.md files
+- Review the code comments
+- Test with: python test_chatbot.py
+- Check logs in the terminal
+
+================================================================================
+

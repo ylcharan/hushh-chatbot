@@ -1,0 +1,475 @@
+================================================================================
+RAG CHATBOT - API DOCUMENTATION
+================================================================================
+
+Base URL: http://localhost:5001
+Content-Type: application/json
+
+================================================================================
+HEALTH & STATUS ENDPOINTS
+================================================================================
+
+GET /
+----
+Welcome message with available endpoints
+
+Response:
+{
+  "message": "Welcome to RAG Chatbot API",
+  "status": "running",
+  "endpoints": {
+    "health": "/api/health",
+    "chat": "/api/chat",
+    "knowledge": "/api/knowledge",
+    "sessions": "/api/sessions"
+  }
+}
+
+GET /api/health
+---------------
+Health check endpoint
+
+Response:
+{
+  "status": "healthy",
+  "service": "RAG Chatbot Backend",
+  "database": "connected",
+  "rag_service": "active"
+}
+
+================================================================================
+CHAT ENDPOINTS
+================================================================================
+
+POST /api/chat
+--------------
+Send a message to the chatbot and get an AI-generated response
+
+Request Body:
+{
+  "message": "What are your business hours?",
+  "session_id": "optional-uuid-v4"  // Optional, will be created if not provided
+}
+
+Response:
+{
+  "success": true,
+  "response": "We are open Monday through Friday, 9:00 AM to 6:00 PM EST...",
+  "session_id": "550e8400-e29b-41d4-a716-446655440000",
+  "context_used": [
+    {
+      "id": 2,
+      "title": "Business Hours",
+      "content": "We are open Monday through Friday...",
+      "category": "general",
+      "similarity": 0.87
+    }
+  ],
+  "timestamp": "2025-11-20T10:30:45.123456"
+}
+
+Error Response (400):
+{
+  "success": false,
+  "error": "Message is required"
+}
+
+Example cURL:
+curl -X POST http://localhost:5001/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "What are your business hours?"}'
+
+GET /api/chat/history/<session_id>
+-----------------------------------
+Get chat history for a specific session
+
+Query Parameters:
+  - limit: Number of messages to return (default: 50)
+
+Response:
+{
+  "success": true,
+  "session_id": "550e8400-e29b-41d4-a716-446655440000",
+  "count": 5,
+  "history": [
+    {
+      "id": 1,
+      "user_message": "What are your business hours?",
+      "bot_response": "We are open Monday through Friday...",
+      "context_used": [...],
+      "created_at": "2025-11-20T10:30:45"
+    }
+  ]
+}
+
+Example cURL:
+curl http://localhost:5001/api/chat/history/550e8400-e29b-41d4-a716-446655440000?limit=10
+
+================================================================================
+KNOWLEDGE BASE ENDPOINTS
+================================================================================
+
+GET /api/knowledge
+------------------
+Get all knowledge base entries
+
+Response:
+{
+  "success": true,
+  "count": 10,
+  "knowledge": [
+    {
+      "id": 1,
+      "title": "Company Overview",
+      "content": "Our company is a leading provider...",
+      "category": "general",
+      "created_at": "2025-11-20T10:00:00",
+      "updated_at": "2025-11-20T10:00:00"
+    }
+  ]
+}
+
+Example cURL:
+curl http://localhost:5001/api/knowledge
+
+GET /api/knowledge/<id>
+-----------------------
+Get a specific knowledge base entry
+
+Response:
+{
+  "success": true,
+  "knowledge": {
+    "id": 1,
+    "title": "Company Overview",
+    "content": "Our company is a leading provider...",
+    "embedding": [0.123, 0.456, ...],  // Vector embedding
+    "category": "general",
+    "created_at": "2025-11-20T10:00:00",
+    "updated_at": "2025-11-20T10:00:00"
+  }
+}
+
+Error Response (404):
+{
+  "success": false,
+  "error": "Knowledge entry not found"
+}
+
+Example cURL:
+curl http://localhost:5001/api/knowledge/1
+
+POST /api/knowledge
+-------------------
+Add a new knowledge base entry
+
+Request Body:
+{
+  "title": "Return Policy",
+  "content": "Our return policy allows customers to return products within 30 days...",
+  "category": "policy"  // Optional, defaults to "general"
+}
+
+Response (201):
+{
+  "success": true,
+  "message": "Knowledge added successfully",
+  "id": 11
+}
+
+Error Response (400):
+{
+  "success": false,
+  "error": "Title and content are required"
+}
+
+Example cURL:
+curl -X POST http://localhost:5001/api/knowledge \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Return Policy",
+    "content": "Our return policy allows customers to return products within 30 days of purchase for a full refund.",
+    "category": "policy"
+  }'
+
+PUT /api/knowledge/<id>
+-----------------------
+Update an existing knowledge base entry
+
+Request Body (all fields optional):
+{
+  "title": "Updated Title",
+  "content": "Updated content...",
+  "category": "updated-category"
+}
+
+Response:
+{
+  "success": true,
+  "message": "Knowledge updated successfully"
+}
+
+Error Response (404):
+{
+  "success": false,
+  "error": "Knowledge entry not found"
+}
+
+Note: If content is updated, the embedding will be automatically regenerated.
+
+Example cURL:
+curl -X PUT http://localhost:5001/api/knowledge/1 \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Updated Company Overview"}'
+
+DELETE /api/knowledge/<id>
+--------------------------
+Delete a knowledge base entry
+
+Response:
+{
+  "success": true,
+  "message": "Knowledge deleted successfully"
+}
+
+Error Response (404):
+{
+  "success": false,
+  "error": "Knowledge entry not found"
+}
+
+Example cURL:
+curl -X DELETE http://localhost:5001/api/knowledge/1
+
+================================================================================
+SESSION ENDPOINTS
+================================================================================
+
+POST /api/sessions
+------------------
+Create a new chat session
+
+Response (201):
+{
+  "success": true,
+  "session_id": "550e8400-e29b-41d4-a716-446655440000"
+}
+
+Example cURL:
+curl -X POST http://localhost:5001/api/sessions
+
+GET /api/sessions/<session_id>
+-------------------------------
+Get session information
+
+Response:
+{
+  "success": true,
+  "session": {
+    "id": 1,
+    "session_id": "550e8400-e29b-41d4-a716-446655440000",
+    "created_at": "2025-11-20T10:00:00",
+    "last_activity": "2025-11-20T10:30:00"
+  }
+}
+
+Error Response (404):
+{
+  "success": false,
+  "error": "Session not found"
+}
+
+Example cURL:
+curl http://localhost:5001/api/sessions/550e8400-e29b-41d4-a716-446655440000
+
+================================================================================
+TYPICAL WORKFLOWS
+================================================================================
+
+Workflow 1: Simple Chat
+------------------------
+1. POST /api/chat with message (session_id will be auto-created)
+2. Save the returned session_id
+3. POST /api/chat with message and session_id for follow-up questions
+
+Workflow 2: Managed Session
+----------------------------
+1. POST /api/sessions to create a session
+2. POST /api/chat with the session_id
+3. GET /api/chat/history/<session_id> to view history
+4. Continue chatting with the same session_id
+
+Workflow 3: Knowledge Management
+---------------------------------
+1. GET /api/knowledge to view existing knowledge
+2. POST /api/knowledge to add new entries
+3. PUT /api/knowledge/<id> to update entries
+4. DELETE /api/knowledge/<id> to remove entries
+
+Workflow 4: Build a Chatbot Widget
+-----------------------------------
+1. Create session on page load: POST /api/sessions
+2. Send user messages: POST /api/chat
+3. Display bot responses
+4. Load history on page refresh: GET /api/chat/history/<session_id>
+
+================================================================================
+ERROR HANDLING
+================================================================================
+
+All endpoints return consistent error responses:
+
+{
+  "success": false,
+  "error": "Error message describing what went wrong"
+}
+
+HTTP Status Codes:
+- 200: Success (GET requests)
+- 201: Created (POST requests)
+- 400: Bad Request (invalid input)
+- 404: Not Found (resource doesn't exist)
+- 500: Internal Server Error (server-side error)
+
+================================================================================
+RATE LIMITING
+================================================================================
+
+Currently, there are no rate limits on the API. However, OpenAI API has its own
+rate limits based on your plan:
+
+- Free tier: ~3 requests/minute
+- Pay-as-you-go: ~60 requests/minute
+- Higher tiers: Contact OpenAI for limits
+
+If you hit OpenAI rate limits, you'll receive an error response.
+
+================================================================================
+CORS
+================================================================================
+
+CORS is enabled for all origins. This allows the API to be called from any
+frontend application.
+
+If you need to restrict CORS in production, modify the CORS configuration in
+app.py:
+
+from flask_cors import CORS
+CORS(app, origins=['https://yourdomain.com'])
+
+================================================================================
+AUTHENTICATION
+================================================================================
+
+Currently, the API does not require authentication. For production use, consider
+adding:
+
+1. API Key authentication
+2. JWT tokens
+3. OAuth 2.0
+4. Rate limiting per user/IP
+
+================================================================================
+BEST PRACTICES
+================================================================================
+
+1. Session Management
+   - Create a session once and reuse it for the conversation
+   - Don't create a new session for every message
+
+2. Knowledge Base
+   - Keep entries focused and well-organized
+   - Use descriptive titles
+   - Categorize entries for better organization
+   - Update embeddings when content changes (automatic)
+
+3. Error Handling
+   - Always check the "success" field in responses
+   - Handle network errors gracefully
+   - Implement retry logic for transient failures
+
+4. Performance
+   - Limit chat history retrieval (use the limit parameter)
+   - Cache frequently accessed knowledge entries
+   - Use appropriate timeout values
+
+5. Cost Optimization
+   - Reuse sessions to maintain context
+   - Keep knowledge base entries concise
+   - Monitor OpenAI API usage
+
+================================================================================
+EXAMPLES IN DIFFERENT LANGUAGES
+================================================================================
+
+Python:
+-------
+import requests
+
+# Chat
+response = requests.post('http://localhost:5001/api/chat', json={
+    'message': 'What are your business hours?'
+})
+data = response.json()
+print(data['response'])
+
+# Add knowledge
+response = requests.post('http://localhost:5001/api/knowledge', json={
+    'title': 'New Policy',
+    'content': 'Policy details...',
+    'category': 'policy'
+})
+
+JavaScript (Node.js):
+---------------------
+const axios = require('axios');
+
+// Chat
+const response = await axios.post('http://localhost:5001/api/chat', {
+  message: 'What are your business hours?'
+});
+console.log(response.data.response);
+
+// Add knowledge
+await axios.post('http://localhost:5001/api/knowledge', {
+  title: 'New Policy',
+  content: 'Policy details...',
+  category: 'policy'
+});
+
+JavaScript (Browser):
+---------------------
+// Chat
+fetch('http://localhost:5001/api/chat', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    message: 'What are your business hours?'
+  })
+})
+.then(res => res.json())
+.then(data => console.log(data.response));
+
+cURL:
+-----
+# Chat
+curl -X POST http://localhost:5001/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "What are your business hours?"}'
+
+# Add knowledge
+curl -X POST http://localhost:5001/api/knowledge \
+  -H "Content-Type: application/json" \
+  -d '{"title": "New Policy", "content": "Policy details...", "category": "policy"}'
+
+================================================================================
+SUPPORT
+================================================================================
+
+For issues or questions:
+- Check the README.md for setup instructions
+- Run test_chatbot.py to diagnose issues
+- Review the code comments in app.py and rag_service.py
+
+================================================================================
+
